@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/activity_main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    tools:context="dk.au.grp5.ti_ipwi_mini_project.MainActivity">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Group 5 really fancy app!"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:id="@+id/textView" />
+
+    <Spinner
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/textView"
+        android:layout_marginTop="67dp"
+        android:id="@+id/wifiSpinner"
+        android:layout_alignEnd="@+id/textView2" />
+
+    <TextView
+        android:text="Select network to connect"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/textView2"
+        android:textSize="30sp"
+        android:layout_below="@+id/textView"
+        android:layout_alignParentStart="true"
+        android:layout_marginTop="18dp" />
+
+    <Button
+        android:text="Check Connection"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/checkConnection_btn"
+        android:onClick="onCheckConnection"
+        android:layout_alignParentBottom="true"
+        android:layout_toEndOf="@+id/netPw_text" />
+
+    <Button
+        android:text="Connect and Send"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignTop="@+id/checkConnection_btn"
+        android:layout_alignParentStart="true"
+        android:id="@+id/connect_btn"
+        android:clickable="false"
+        android:onClick="onConnectClick" />
+
+    <EditText
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:inputType="textPersonName"
+        android:ems="10"
+        android:id="@+id/netPw_text"
+        android:hint="Password"
+        android:layout_above="@+id/connect_btn"
+        android:layout_alignParentStart="true"
+        android:layout_marginBottom="65dp" />
+
+    <EditText
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:inputType="textPersonName"
+        android:ems="10"
+        android:id="@+id/netSsid_text"
+        android:hint="SSID"
+        android:layout_above="@+id/netPw_text"
+        android:layout_alignParentStart="true" />
+
+    <TextView
+        android:text="Set SSID and PW to send"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/textView3"
+        android:textSize="30sp"
+        android:layout_above="@+id/netSsid_text"
+        android:layout_alignParentStart="true" />
+
+    <TextView
+        android:text="Password"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/wifiSpinner"
+        android:layout_alignParentStart="true"
+        android:id="@+id/textView4"
+        android:textSize="30sp" />
+
+    <EditText
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:inputType="textPersonName"
+        android:ems="10"
+        android:layout_below="@+id/textView4"
+        android:layout_alignParentStart="true"
+        android:id="@+id/epsPw_text"
+        android:textSize="18sp"
+        android:hint="ESP8266 PW" />
+
+    <Button
+        android:text="SET"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/espPw_btn"
+        android:layout_alignBottom="@+id/epsPw_text"
+        android:layout_toEndOf="@+id/epsPw_text"
+        android:onClick="onEspPwClick" />
+
+    <Button
+        android:text="set"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/netPw_text"
+        android:layout_toEndOf="@+id/netSsid_text"
+        android:id="@+id/netSsid_btn"
+        android:onClick="onNetSsidClick" />
+
+    <Button
+        android:text="set"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBottom="@+id/netPw_text"
+        android:layout_toEndOf="@+id/netPw_text"
+        android:id="@+id/netPw_btn"
+        android:onClick="onNetPwClick" />
+</RelativeLayout>
