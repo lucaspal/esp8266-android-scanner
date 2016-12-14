@@ -191,4 +191,8 @@ public class MainActivity extends AppCompatActivity {
         netPass = text.getText().toString();
     }
 
+    public void onChkStatusClick(View v) {
+        Intent chkStatusActivity = new Intent(this, CheckStatusActivity.class);
+        startActivity(chkStatusActivity);
+    }
 }
