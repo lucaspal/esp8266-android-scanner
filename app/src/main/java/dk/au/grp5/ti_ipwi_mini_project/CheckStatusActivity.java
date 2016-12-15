@@ -18,7 +18,7 @@ import java.net.URL;
 
 public class CheckStatusActivity extends AppCompatActivity {
 
-    private static final String API_ENDPOINT  = "https://tiipwilab.eng.au.dk/exercises/group5/dummy.php";
+    private static final String API_ENDPOINT  = "https://tiipwilab.eng.au.dk/exercises/group5/app.php";
     private TextView mDevicesTv;
 
 
@@ -32,17 +32,17 @@ public class CheckStatusActivity extends AppCompatActivity {
 
     public void onRefreshClick(View v) {
         try {
-            new GetStatus().execute(new URL(API_ENDPOINT));
+            new DoGetStatusAsync().execute(new URL(API_ENDPOINT));
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }
     }
 
-    private void updateView(JSONObject jsonObject) {
-        mDevicesTv.setText(jsonObject.toString());
+    private void onJsonResult(JSONObject jsonObject) {
+        mDevicesTv.setText(jsonObject == null ? "None" : jsonObject.toString());
     }
 
-    private class GetStatus extends AsyncTask<URL, Void, JSONObject> {
+    private class DoGetStatusAsync extends AsyncTask<URL, Void, JSONObject> {
 
         @Override
         protected JSONObject doInBackground(URL... urls) {
@@ -81,7 +81,7 @@ public class CheckStatusActivity extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(JSONObject jsonObject) {
-            updateView(jsonObject);
+            onJsonResult(jsonObject);
             super.onPostExecute(jsonObject);
         }
     }
