@@ -18,20 +18,12 @@
         android:layout_centerHorizontal="true"
         android:id="@+id/textView" />
 
-    <Spinner
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/textView"
-        android:layout_marginTop="67dp"
-        android:id="@+id/wifiSpinner"
-        android:layout_alignEnd="@+id/textView2" />
-
     <TextView
-        android:text="Select network to connect"
+        android:text="Select network"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/textView2"
-        android:textSize="30sp"
+        android:textSize="20sp"
         android:layout_below="@+id/textView"
         android:layout_alignParentStart="true"
         android:layout_marginTop="18dp" />
@@ -44,7 +36,8 @@
         android:id="@+id/netSsid_text"
         android:hint="SSID"
         android:layout_above="@+id/netPw_text"
-        android:layout_alignParentStart="true" />
+        android:layout_alignParentStart="true"
+        android:text="ZyXELC91B21" />
 
     <TextView
         android:text="Set SSID and PW to send"
@@ -122,7 +115,8 @@
         android:hint="Password"
         android:layout_marginBottom="19dp"
         android:layout_above="@+id/connect_btn"
-        android:layout_alignParentStart="true" />
+        android:layout_alignParentStart="true"
+        android:text="A54E2055FCF8" />
 
     <EditText
         android:layout_width="wrap_content"
@@ -134,7 +128,8 @@
         android:hint="ESP8266 PW"
         android:layout_above="@+id/textView3"
         android:layout_alignParentStart="true"
-        android:layout_marginBottom="19dp" />
+        android:layout_marginBottom="19dp"
+        android:text="12345678" />
 
     <TextView
         android:text="Password"
@@ -143,6 +138,13 @@
         android:id="@+id/textView4"
         android:textSize="30sp"
         android:layout_above="@+id/espPw_btn"
+        android:layout_alignParentStart="true" />
+
+    <Spinner
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/wifiSpinner"
+        android:layout_below="@+id/textView2"
         android:layout_alignParentStart="true" />
 
 </RelativeLayout>

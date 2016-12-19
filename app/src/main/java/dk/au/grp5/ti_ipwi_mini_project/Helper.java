@@ -17,6 +17,6 @@ public class Helper {
     }
 
     public static String formatData(String ssid, String pw) {
-        return ssid + ";" + pw;
+        return "<" + ssid + ";" + pw + ">";
     }
 }

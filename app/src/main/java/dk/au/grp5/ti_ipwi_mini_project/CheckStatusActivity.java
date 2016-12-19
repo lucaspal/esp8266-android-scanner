@@ -43,7 +43,6 @@ public class CheckStatusActivity extends AppCompatActivity {
     }
 
     private class DoGetStatusAsync extends AsyncTask<URL, Void, JSONObject> {
-
         @Override
         protected JSONObject doInBackground(URL... urls) {
             URL url = urls[0];

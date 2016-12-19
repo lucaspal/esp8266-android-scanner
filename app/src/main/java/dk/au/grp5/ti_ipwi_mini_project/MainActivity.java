@@ -11,10 +11,10 @@ import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
@@ -25,6 +25,7 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -32,111 +33,98 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
-    List<ScanResult> wifiList;
-    WifiManager wm;
-    WifiScanReceiver wifiReceiver;
+    private List<ScanResult> mApList;
+    private WifiManager mWifiManager;
+    private WifiScanReceiver mWifiReceiver;
 
-    String  espPass, espSSID, netPass, netSSID;
-    String espAddress;
-    int espPort = 34;
+    private String mEspApPassword, mTargetApPassword, mTargetApSssid;
+
+    private String mEspIpAddress;
+    private static final int ESP_PORT = 8000;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_main);
 
-        setup();
+        initializeWifi();
     }
 
-    public void setup() {
-        //Initiate wifi manager
-        wm = (WifiManager) getBaseContext().getSystemService(Context.WIFI_SERVICE);
+    public void initializeWifi() {
+        mWifiManager = (WifiManager) getBaseContext().getSystemService(Context.WIFI_SERVICE);
 
-        // Requests permission if on 6.0 and up
+        // Requests permission if on 6.0+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             if (checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                 requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION}, 0x12345);
             }
         }
 
-        //Enable wifi if disabled
-        if (!wm.isWifiEnabled()) {
-            wm.setWifiEnabled(true);
+        // Enable WiFi if disabled
+        if (!mWifiManager.isWifiEnabled()) {
+            mWifiManager.setWifiEnabled(true);
             Toast.makeText(this, "Enabling WiFi.", Toast.LENGTH_SHORT).show();
         }
 
-        //Register broadcast receiver and start scan.
-        wifiReceiver = new WifiScanReceiver();
-        registerReceiver(wifiReceiver, new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
-        wm.startScan();
+        // Register broadcast receiver and start scan
+        mWifiReceiver = new WifiScanReceiver();
+        registerReceiver(mWifiReceiver, new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
+        mWifiManager.startScan();
         Toast.makeText(this, "Scan started.", Toast.LENGTH_LONG).show();
     }
 
 
     private void connect() {
-        //Establishes a WPA connection
-        //All data is set, checked in onConnectClick
+        // Establishes a WPA connection
         WifiConfiguration conf = new WifiConfiguration();
-        conf.SSID = "\"" + getNetworkName() + "\"";
 
-        conf.preSharedKey = "\"" + espPass + "\"";
-        //Add network to the WifiManager
-        wm.addNetwork(conf);
-        //Connect using the configuration
-        List<WifiConfiguration> list = wm.getConfiguredNetworks();
-        for( WifiConfiguration i : list ) {
-            if(i.SSID != null && i.SSID.equals("\"" + espSSID + "\"")) {
-                wm.disconnect();
-                wm.enableNetwork(i.networkId, true);
-                wm.reconnect();
-                break;
-            }
+        conf.SSID = "\"" + getNetworkName() + "\"";
+        conf.preSharedKey = "\"" + mEspApPassword + "\"";
+        conf.status = WifiConfiguration.Status.ENABLED;
+        conf.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.TKIP);
+        conf.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.CCMP);
+        conf.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
+        conf.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.TKIP);
+        conf.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.CCMP);
+        conf.allowedProtocols.set(WifiConfiguration.Protocol.RSN);
+
+        // Add network to the WifiManager
+
+        final int netId = mWifiManager.addNetwork(conf);
+
+        if (netId > -1) {
+            mWifiManager.disconnect();
+            mWifiManager.enableNetwork(netId, true);
+            mWifiManager.reconnect();
         }
-        //Get IP address
-        DhcpInfo dhcpInfo = wm.getDhcpInfo();
-        espAddress = Helper.formatIpAddress(dhcpInfo.serverAddress);
+
+        // Get IP address
+        DhcpInfo dhcpInfo = mWifiManager.getDhcpInfo();
+        mEspIpAddress = Helper.formatIpAddress(dhcpInfo.serverAddress);
     }
 
     private void sendData() {
-        PrintWriter out;
-
-        //Check if connected to the right device
-        WifiInfo wifiInfo = wm.getConnectionInfo();
-        //Send data
-        if(wifiInfo.getSSID().equals(espSSID)) try {
-            Socket socket = new Socket(espAddress, espPort);
-
-            out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())), true);
-            out.println(Helper.formatData(netSSID, netPass));
-            out.flush();
-
-            //Close connection
-            out.close();
-            socket.close();
-        } catch (UnknownHostException e) {
-            Toast.makeText(this, "Cannot find host.", Toast.LENGTH_SHORT).show();
-            Log.d("SOCKET EXCEPTION", e.toString());
-        }catch (IOException e) {
-            Toast.makeText(this, "Cannot open connection.", Toast.LENGTH_SHORT).show();
-            Log.d("SOCKET EXCEPTION", e.toString());
-        }  catch (Exception e) {
-            Toast.makeText(this, "Something bad happened.", Toast.LENGTH_SHORT).show();
-            Log.d("SOCKET EXCEPTION", e.toString());
-        }
+        new DoSendDataAsync().execute();
     }
 
-    public class WifiScanReceiver extends BroadcastReceiver {
+    private String getNetworkName() {
+        Spinner selectedValue = (Spinner) findViewById(R.id.wifiSpinner);
+        return selectedValue.getSelectedItem().toString();
+    }
 
-        //This method is called when the number of networks change
-        public void onReceive (Context c, Intent intent) {
+    private class WifiScanReceiver extends BroadcastReceiver {
+
+        // This method is called when the number of networks change
+        public void onReceive(Context c, Intent intent) {
             List<String> wifiListString = new ArrayList<>();
 
-            wifiList = wm.getScanResults();
-            for(ScanResult net : wifiList) {
+            mApList = mWifiManager.getScanResults();
+            for (ScanResult net : mApList) {
                 wifiListString.add(net.SSID);
             }
 
-            //Fill spinner
+            // Fill spinner
             ArrayAdapter<String> adapter = new ArrayAdapter<>(
                     getApplicationContext(), android.R.layout.simple_spinner_item, wifiListString);
             adapter.setDropDownViewResource(android.R.layout.simple_spinner_item);
@@ -145,31 +133,56 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private String getNetworkName() {
-        String _name;
-        //TODO: Check for null
-        Spinner selectedValue = (Spinner) findViewById(R.id.wifiSpinner);
-        _name = selectedValue.getSelectedItem().toString();
-        return _name;
+    private class DoSendDataAsync extends AsyncTask<Void, Void, Void> {
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+            if (android.os.Debug.isDebuggerConnected())
+                android.os.Debug.waitForDebugger();
+
+            PrintWriter out;
+
+            // Check if connected to the right device
+            WifiInfo wifiInfo = mWifiManager.getConnectionInfo();
+            //Send data
+            if (wifiInfo.getSSID().equals("\"" + getNetworkName() + "\"")) try {
+                Socket s = new Socket();
+                s.setSoTimeout(10000);
+                s.connect(new InetSocketAddress(mEspIpAddress, ESP_PORT));
+
+                out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(s.getOutputStream())), true);
+                String packet = Helper.formatData(mTargetApSssid, mTargetApPassword);
+                out.println(packet);
+                out.flush();
+
+                //Close connection
+                out.close();
+                s.close();
+            } catch (UnknownHostException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            return null;
+        }
     }
 
 
     public void onConnectClick(View v) {
-        Log.d("NETWORK NAME","Network to connect: " + getNetworkName());
-        Log.d("NETWORK NAME","Password to use: " + espPass);
-        Log.d("NETWORK NAME","SSID to send: " + netSSID);
-        Log.d("NETWORK NAME","Password to send: " + netPass);
-
-        if (getNetworkName() != null && espPass != null && netPass != null && netSSID != null) {
+        if (getNetworkName() != null && mEspApPassword != null && mTargetApPassword != null && mTargetApSssid != null) {
             connect();
             sendData();
         } else {
             Toast.makeText(this, "Insert credentials first.", Toast.LENGTH_LONG).show();
         }
     }
+
     public void onCheckConnection(View v) {
-        if (!wm.isWifiEnabled()) {
-            wm.setWifiEnabled(true);
+        if (!mWifiManager.isWifiEnabled()) {
+            mWifiManager.setWifiEnabled(true);
             Toast.makeText(this, "Enabling WiFi.", Toast.LENGTH_SHORT).show();
         } else {
             Toast.makeText(this, "WiFi is on.", Toast.LENGTH_SHORT).show();
@@ -178,17 +191,17 @@ public class MainActivity extends AppCompatActivity {
 
     public void onEspPwClick(View v) {
         EditText text = (EditText) findViewById(R.id.epsPw_text);
-        espPass = text.getText().toString();
+        mEspApPassword = text.getText().toString();
     }
 
     public void onNetSsidClick(View v) {
         EditText text = (EditText) findViewById(R.id.netSsid_text);
-        netSSID = text.getText().toString();
+        mTargetApSssid = text.getText().toString();
     }
 
     public void onNetPwClick(View v) {
         EditText text = (EditText) findViewById(R.id.netPw_text);
-        netPass = text.getText().toString();
+        mTargetApPassword = text.getText().toString();
     }
 
     public void onChkStatusClick(View v) {
